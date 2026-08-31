@@ -13,6 +13,14 @@ In the /data folder, a .csv for each year includes:
 - **"federal_action_obligation"**: dollars committed as part of agreement
 - **"recipient_county_name"**: county where award recipient is based
 
+## Notebook
+
+The analysis notebook contains a fact check of key findings from our published story.
+
+Requirements: [uv](https://docs.astral.sh/uv/getting-started/installation/#homebrew)
+
+Usage: `uvx --python 3.12 marimo -y edit --sandbox analysis.py`
+
 ## License
 
 Code in this repository is licensed under the Apache License, Version 2.0; see [LICENSE](LICENSE).
