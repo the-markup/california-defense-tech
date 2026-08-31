@@ -10,6 +10,7 @@ In the /data folder, a .csv for each year includes:
   <li><b>"action_date_fiscal_year"</b>: the fiscal year when agency issued the action</li>
   <li><b>"prime_award_transaction_recipient_cd_current"</b>: current congressional district listed for the winner</li>
   <li><b>"federal_action_obligation"</b>: dollars committed as part of agreement</li>
+  <li><b>"recipient_county_name"</b>: county where award recipient is based</li>
 </ul>
 ## License
 
