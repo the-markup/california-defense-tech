@@ -4,4 +4,3 @@ This repo contains data for our story "Defense tech is booming in California. Tr
 The Markup and CalMatters downloaded the following data on defense industry contracts from <a href=
                                                                                              https://www.usaspending.gov/>usaspending.gov</a>.
 The data includes any federal obligations from fiscal years 2002 to 2026 where the awarding agency was the Department of Defense and the recipient's location was in California. Our analysis looks at changes over time by California congressional district.
-We're providing direct access to the files we downloaded here.
