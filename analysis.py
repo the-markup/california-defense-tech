@@ -144,19 +144,6 @@ def _(df_la_spending_2025):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    > In 2015, 14 of the top 100 defense contracts won in California went to businesses focused on drones or space, according to the CalMatters and Markup analysis. By 2025, that share was up to 21. The shift is similar if measured by dollars, from 13%to 18%.
-    """)
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     > California’s 36th Congressional District includes El Segundo, a high-tech defense hub outside Los Angeles. In the district’s 2024 House race, incumbent Democrat Ted Lieu took nearly 70 percent of the vote over a Republican challenger. The increase in defense contracts between 2015 and 2025 in that district alone was more than $3.6 billion.
     """)
     return
