@@ -11,3 +11,6 @@ In the /data folder, a .csv for each year includes:
   <li><b>"prime_award_transaction_recipient_cd_current"</b>: current congressional district listed for the winner</li>
   <li><b>"federal_action_obligation"</b>: dollars committed as part of agreement</li>
 </ul>
+## License
+
+Code in this repository is licensed under the Apache License, Version 2.0; see [LICENSE](LICENSE).
