@@ -22,6 +22,7 @@ def _():
 
 @app.cell
 def _():
+    # TO-DO: come back fix CPI usage
     # cpi.update() ## CPI package is suffering from a serious performance isse that makes it impossible to use with medium to large datasets (ie 5-10 min execution on a single medium size dataset)
     return
 
