@@ -1,8 +1,5 @@
 # /// script
-# dependencies = [
-#     "cpi==2.0.10",
-#     "marimo",
-# ]
+# dependencies = ["marimo"]
 # requires-python = ">=3.12"
 # ///
 
@@ -24,8 +21,8 @@ def _():
 
 
 @app.cell
-def _(cpi):
-    cpi.update()
+def _():
+    # cpi.update() ## CPI package is suffering from a serious performance isse that makes it impossible to use with medium to large datasets (ie 5-10 min execution on a single medium size dataset)
     return
 
 
@@ -220,11 +217,6 @@ def _(YEARS_OF_INTEREST, calc_district_total_obligation):
     print(
         f"Waters’ district has seen its share of obligated defense department spending grow over the last decade by {ca_cd_43_total_obligation_10y_difference:+,}."
     )
-    return
-
-
-@app.cell
-def _():
     return
 
 
