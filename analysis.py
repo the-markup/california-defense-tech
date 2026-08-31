@@ -1,5 +1,9 @@
 # /// script
-# dependencies = ["marimo"]
+# dependencies = [
+#     "cpi==2.0.10",
+#     "marimo",
+#     "pandas==3.0.5",
+# ]
 # requires-python = ">=3.12"
 # ///
 
@@ -21,9 +25,8 @@ def _():
 
 
 @app.cell
-def _():
-    # TO-DO: come back fix CPI usage
-    # cpi.update() ## CPI package is suffering from a serious performance isse that makes it impossible to use with medium to large datasets (ie 5-10 min execution on a single medium size dataset)
+def _(cpi):
+    cpi.update()
     return
 
 
@@ -62,20 +65,9 @@ def _(READ_COLS, READ_DTYPE, cpi, pd):
             usecols=READ_COLS,
             dtype=READ_DTYPE,
         )
-
-        # Commented out for the timebeing b/c cpi is too slow
-        # df["federal_action_obligation_original"] = df[
-        #     "federal_action_obligation"
-        # ]
-        # df["federal_action_obligation"] = df[
-        #     "federal_action_obligation"
-        # ].apply(
-        #     lambda obligation: adjust_to_2025_dollars(obligation, int(year))
-        # )
-
         return df
 
-    return (read_defense_spend_data,)
+    return adjust_to_2025_dollars, read_defense_spend_data
 
 
 @app.cell(hide_code=True)
@@ -89,24 +81,35 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    # LA County
+
     > The total value of defense contracts won by companies in Los Angeles County nearly tripled in the last 10 years after adjusting for inflation, according to an analysis by CalMatters and The Markup.
     """)
     return
 
 
 @app.cell
-def _(YEARS_OF_INTEREST, read_defense_spend_data):
+def _(YEARS_OF_INTEREST, adjust_to_2025_dollars, mo, read_defense_spend_data):
     def read_la_county_data(year):
         df = read_defense_spend_data(year)
         return df[df["recipient_county_name"] == "LOS ANGELES"]
 
     _dfs = {year: read_la_county_data(year) for year in YEARS_OF_INTEREST}
+    la_obligation_totals = {
+        year: adjust_to_2025_dollars(
+            _dfs[year]["federal_action_obligation"].sum(), int(year)
+        )
+        for year in YEARS_OF_INTEREST
+    }
 
-    la_2025_obligation_total = _dfs["2025"]["federal_action_obligation"].sum()
-    la_2015_obligation_total = _dfs["2015"]["federal_action_obligation"].sum()
+    la_2025_div_2015 = round(
+        la_obligation_totals["2025"] / la_obligation_totals["2015"], 1
+    )
 
-    round(la_2025_obligation_total / la_2015_obligation_total, 1)
-    return
+    mo.md(
+        f"The total value of defense contracts won by companies in Los Angeles County {la_2025_div_2015}x'd in the last 10 years after adjusting for inflation, according to an analysis by CalMatters and The Markup."
+    )
+    return (read_la_county_data,)
 
 
 @app.cell(hide_code=True)
@@ -118,51 +121,66 @@ def _(mo):
 
 
 @app.cell
-def _(read_defense_spend_data):
-    DF_2025_SPENDING = read_defense_spend_data("2025")
-    df_la_spending_2025 = DF_2025_SPENDING[
-        DF_2025_SPENDING["recipient_county_name"] == "LOS ANGELES"
-    ]
+def _(mo, read_la_county_data):
+    df_la_spending_2025 = read_la_county_data("2025")
 
     sum_federal_obligation_in_la_county_2025 = df_la_spending_2025[
         "federal_action_obligation"
     ].sum()
 
-    print(
-        f"The {sum_federal_obligation_in_la_county_2025:,.0f} in contracts won in LA County last year..."
+    top10_la_cnty_recipients = (
+        df_la_spending_2025.groupby("recipient_name")[
+            "federal_action_obligation"
+        ]
+        .sum()
+        .sort_values(ascending=False)
+        .head(10)
     )
-    return (df_la_spending_2025,)
 
-
-@app.cell
-def _(df_la_spending_2025):
-    df_la_spending_2025.groupby("recipient_name")[
-        "federal_action_obligation"
-    ].sum().sort_values(ascending=False).head(10)
+    mo.vstack(
+        [
+            f"The ${sum_federal_obligation_in_la_county_2025:,.0f} in contracts won in LA County last year went largely to old-school defense contractors with headquarters elsewhere, like Boeing.",
+            mo.md("**Top 10 recepients in LA County**"),
+            top10_la_cnty_recipients,
+        ]
+    )
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    # CA-36
+
     > California’s 36th Congressional District includes El Segundo, a high-tech defense hub outside Los Angeles. In the district’s 2024 House race, incumbent Democrat Ted Lieu took nearly 70 percent of the vote over a Republican challenger. The increase in defense contracts between 2015 and 2025 in that district alone was more than $3.6 billion.
     """)
     return
 
 
 @app.cell
-def _(read_defense_spend_data):
-    CA_CD_36 = "CA-36"
-    YEARS_OF_INTEREST = ["2015", "2025"]
-
-    def calc_district_total_obligation(congressional_district: str, year: str):
-        df = read_defense_spend_data(year)
+def _(adjust_to_2025_dollars, read_defense_spend_data):
+    def calc_district_total_obligation(
+        congressional_district: str,
+        year: str,
+        read_data_func=read_defense_spend_data,
+    ):
+        df = read_data_func(year)
         df_cd = df[
             df["prime_award_transaction_recipient_cd_current"]
             == congressional_district
         ]
-        total_obligation = df_cd["federal_action_obligation"].sum()
+        total_obligation = adjust_to_2025_dollars(
+            df_cd["federal_action_obligation"].sum(), int(year)
+        )
         return round(total_obligation)
+
+    return (calc_district_total_obligation,)
+
+
+@app.cell
+def _(calc_district_total_obligation, mo):
+    CA_CD_36 = "CA-36"
+    YEARS_OF_INTEREST = ["2015", "2025"]
 
     ca_cd_36_total_obligation = {
         year: calc_district_total_obligation(CA_CD_36, year)
@@ -173,24 +191,56 @@ def _(read_defense_spend_data):
         ca_cd_36_total_obligation["2025"] - ca_cd_36_total_obligation["2015"]
     )
 
-    print(
-        f"The increase in defense contracts between 2015 and 2025 in that district alone was {ca_cd_36_total_obligation_10y_difference:+,}."
+    mo.vstack(
+        [
+            mo.md(f"**Full CD {CA_CD_36}**"),
+            f"The increase in defense contracts between 2015 and 2025 in that district alone was {ca_cd_36_total_obligation_10y_difference:+,}.",
+        ]
     )
-    return YEARS_OF_INTEREST, calc_district_total_obligation
+    return CA_CD_36, YEARS_OF_INTEREST
+
+
+@app.cell
+def _(
+    CA_CD_36,
+    YEARS_OF_INTEREST,
+    calc_district_total_obligation,
+    mo,
+    read_la_county_data,
+):
+    ca_la_cd_36_total_obligation = {
+        year: calc_district_total_obligation(
+            CA_CD_36, year, read_la_county_data
+        )
+        for year in YEARS_OF_INTEREST
+    }
+
+    ca_la_cd_36_total_obligation_10y_difference = (
+        ca_la_cd_36_total_obligation["2025"]
+        - ca_la_cd_36_total_obligation["2015"]
+    )
+
+    mo.vstack(
+        [
+            mo.md(f"**CD {CA_CD_36} filtered for LA County**"),
+            f"The increase in defense contracts between 2015 and 2025 in that district alone was {ca_la_cd_36_total_obligation_10y_difference:+,}.",
+        ]
+    )
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    > Another district, California’s 43rd, is represented by Maxine Waters, who in 2021 signed on to the proposed No Militarization of Space Act, which described the Space Force as an unnecessary waste of resources and sought to abolish it.
+    # CA-43
 
-    > Trump recently proposed to double the budget of the Space Force, another potential boon to the area. Meanwhile, Waters’ district has seen its share of obligated defense department spending grow over the last decade by more than $1.6 billion, or more than 500%, adjusted for inflation. Waters’ office didn’t respond to a request for comment.
+    > [Maxine] Waters’ district [CA-43] has seen its share of obligated defense department spending grow over the last decade by more than $1.6 billion, or more than 500%, adjusted for inflation.
     """)
     return
 
 
 @app.cell
-def _(YEARS_OF_INTEREST, calc_district_total_obligation):
+def _(YEARS_OF_INTEREST, calc_district_total_obligation, mo):
     CA_CD_43 = "CA-43"
 
     ca_cd_43_total_obligation = {
@@ -202,8 +252,40 @@ def _(YEARS_OF_INTEREST, calc_district_total_obligation):
         ca_cd_43_total_obligation["2025"] - ca_cd_43_total_obligation["2015"]
     )
 
-    print(
-        f"Waters’ district has seen its share of obligated defense department spending grow over the last decade by {ca_cd_43_total_obligation_10y_difference:+,}."
+    mo.vstack(
+        [
+            mo.md(f"**Full CD {CA_CD_43}:**"),
+            f"Waters’ district has seen its share of obligated defense department spending grow over the last decade by {ca_cd_43_total_obligation_10y_difference:+,}.",
+        ]
+    )
+    return (CA_CD_43,)
+
+
+@app.cell
+def _(
+    CA_CD_43,
+    YEARS_OF_INTEREST,
+    calc_district_total_obligation,
+    mo,
+    read_la_county_data,
+):
+    ca_la_cd_43_total_obligation = {
+        year: calc_district_total_obligation(
+            CA_CD_43, year, read_la_county_data
+        )
+        for year in YEARS_OF_INTEREST
+    }
+
+    ca_la_cd_43_total_obligation_10y_difference = (
+        ca_la_cd_43_total_obligation["2025"]
+        - ca_la_cd_43_total_obligation["2015"]
+    )
+
+    mo.vstack(
+        [
+            mo.md(f"**CD {CA_CD_43} filtered for LA County:**"),
+            f"Waters’ district has seen its share of obligated defense department spending grow over the last decade by {ca_la_cd_43_total_obligation_10y_difference:+,}.",
+        ]
     )
     return
 
