@@ -3,6 +3,7 @@
 #     "cpi==2.0.10",
 #     "marimo",
 #     "pandas==3.0.5",
+#     "ruff==0.16.5",
 # ]
 # requires-python = ">=3.12"
 # ///
@@ -15,13 +16,11 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    from glob import glob
-
     import cpi
     import marimo as mo
     import pandas as pd
 
-    return cpi, glob, mo, pd
+    return cpi, mo, pd
 
 
 @app.cell
@@ -39,15 +38,8 @@ def _():
         "prime_award_transaction_recipient_cd_current",
         "federal_action_obligation",
     ]
-
     READ_DTYPE = {"action_date_fiscal_year": str}
     return READ_COLS, READ_DTYPE
-
-
-@app.cell
-def _(glob):
-    data_fps = sorted(glob("./data/*.csv"))
-    return
 
 
 @app.cell
@@ -193,40 +185,10 @@ def _(calc_district_total_obligation, mo):
 
     mo.vstack(
         [
-            mo.md(f"**Full CD {CA_CD_36}**"),
             f"The increase in defense contracts between 2015 and 2025 in that district alone was {ca_cd_36_total_obligation_10y_difference:+,}.",
         ]
     )
-    return CA_CD_36, YEARS_OF_INTEREST
-
-
-@app.cell
-def _(
-    CA_CD_36,
-    YEARS_OF_INTEREST,
-    calc_district_total_obligation,
-    mo,
-    read_la_county_data,
-):
-    ca_la_cd_36_total_obligation = {
-        year: calc_district_total_obligation(
-            CA_CD_36, year, read_la_county_data
-        )
-        for year in YEARS_OF_INTEREST
-    }
-
-    ca_la_cd_36_total_obligation_10y_difference = (
-        ca_la_cd_36_total_obligation["2025"]
-        - ca_la_cd_36_total_obligation["2015"]
-    )
-
-    mo.vstack(
-        [
-            mo.md(f"**CD {CA_CD_36} filtered for LA County**"),
-            f"The increase in defense contracts between 2015 and 2025 in that district alone was {ca_la_cd_36_total_obligation_10y_difference:+,}.",
-        ]
-    )
-    return
+    return (YEARS_OF_INTEREST,)
 
 
 @app.cell(hide_code=True)
@@ -254,37 +216,7 @@ def _(YEARS_OF_INTEREST, calc_district_total_obligation, mo):
 
     mo.vstack(
         [
-            mo.md(f"**Full CD {CA_CD_43}:**"),
             f"Waters’ district has seen its share of obligated defense department spending grow over the last decade by {ca_cd_43_total_obligation_10y_difference:+,}.",
-        ]
-    )
-    return (CA_CD_43,)
-
-
-@app.cell
-def _(
-    CA_CD_43,
-    YEARS_OF_INTEREST,
-    calc_district_total_obligation,
-    mo,
-    read_la_county_data,
-):
-    ca_la_cd_43_total_obligation = {
-        year: calc_district_total_obligation(
-            CA_CD_43, year, read_la_county_data
-        )
-        for year in YEARS_OF_INTEREST
-    }
-
-    ca_la_cd_43_total_obligation_10y_difference = (
-        ca_la_cd_43_total_obligation["2025"]
-        - ca_la_cd_43_total_obligation["2015"]
-    )
-
-    mo.vstack(
-        [
-            mo.md(f"**CD {CA_CD_43} filtered for LA County:**"),
-            f"Waters’ district has seen its share of obligated defense department spending grow over the last decade by {ca_la_cd_43_total_obligation_10y_difference:+,}.",
         ]
     )
     return
